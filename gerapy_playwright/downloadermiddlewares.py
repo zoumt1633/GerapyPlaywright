@@ -238,7 +238,13 @@ class PlaywrightMiddleware(object):
                 'User-Agent').decode()
 
         async with async_playwright() as playwright:
-            browser = await playwright.chromium.launch(**options)
+            browser_type = GERAPY_PLAYWRIGHT_BROWSER_TYPE
+            all_browsers = {
+                'chromium': playwright.chromium,
+                'firefox': playwright.firefox,
+                'webkit': playwright.webkit,
+            }
+            browser = await all_browsers.get(browser_type, 'chromium').launch(**options)
 
             context = await browser.new_context(
                 viewport={'width': self.window_width,
