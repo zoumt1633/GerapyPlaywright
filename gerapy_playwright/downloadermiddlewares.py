@@ -12,6 +12,7 @@ from gerapy_playwright.pretend import SCRIPTS as PRETEND_SCRIPTS
 from gerapy_playwright.settings import *
 from gerapy_playwright.utils import install_playwright, is_playwright_installed
 from playwright._impl._api_types import Error as PlaywrightError
+from playwright_stealth import stealth_async
 
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -160,6 +161,7 @@ class PlaywrightMiddleware(object):
         cls.proxy = settings.get('GERAPY_PLAYWRIGHT_PROXY')
         cls.proxy_credential = settings.get(
             'GERAPY_PLAYWRIGHT_PROXY_CREDENTIAL')
+        cls.browser_type = settings.get('GERAPY_PLAYWRIGHT_BROWSER_TYPE', GERAPY_PLAYWRIGHT_BROWSER_TYPE)
         return cls()
 
     async def _process_request(self, request, spider):
@@ -238,14 +240,13 @@ class PlaywrightMiddleware(object):
                 'User-Agent').decode()
 
         async with async_playwright() as playwright:
-            browser_type = GERAPY_PLAYWRIGHT_BROWSER_TYPE
             all_browsers = {
                 'chromium': playwright.chromium,
                 'firefox': playwright.firefox,
                 'webkit': playwright.webkit,
             }
-            browser = await all_browsers.get(browser_type, 'chromium').launch(**options)
-            logger.debug(f'set browser_type: {browser_type}')
+            browser = await all_browsers.get(self.browser_type, playwright.firefox).launch(**options)
+            logger.debug(f'set browser_type: {self.browser_type}')
             context = await browser.new_context(
                 viewport={'width': self.window_width,
                         'height': self.window_height},
@@ -272,8 +273,9 @@ class PlaywrightMiddleware(object):
 
             if _pretend:
                 logger.debug('try to pretend webdriver for url %s', request.url)
-                for script in PRETEND_SCRIPTS:
-                    await page.add_init_script(script=script)
+                # for script in PRETEND_SCRIPTS:
+                #     await page.add_init_script(script=script)
+                await stealth_async(page)
 
             # # the headers must be set using request interception
             # await page.setRequestInterception(self.enable_request_interception)
