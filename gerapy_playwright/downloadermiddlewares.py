@@ -245,7 +245,7 @@ class PlaywrightMiddleware(object):
                 'webkit': playwright.webkit,
             }
             browser = await all_browsers.get(browser_type, 'chromium').launch(**options)
-            logger.debug('set browser_type: {browser.browser_type}')
+            logger.debug(f'set browser_type: {browser.browser_type}')
             context = await browser.new_context(
                 viewport={'width': self.window_width,
                         'height': self.window_height},
